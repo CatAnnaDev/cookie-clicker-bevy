@@ -1,0 +1,219 @@
+{
+  "cookies": 36845940533,
+  "total_cookies_earned": 118003502520,
+  "cookies_per_second": 29183266.0,
+  "cookies_per_click": 1334668,
+  "upgrades": [
+    {
+      "name": "Curseur",
+      "emoji": "☝️",
+      "base_cost": 15,
+      "cost": 245,
+      "cps": 0.1,
+      "count": 20,
+      "description": "Clique automatiquement",
+      "tier": 0
+    },
+    {
+      "name": "Grand-mère",
+      "emoji": "👵",
+      "base_cost": 100,
+      "cost": 1882,
+      "cps": 1.0,
+      "count": 21,
+      "description": "Cuisine des cookies maison",
+      "tier": 0
+    },
+    {
+      "name": "Ferme",
+      "emoji": "🌾",
+      "base_cost": 1100,
+      "cost": 18003,
+      "cps": 8.0,
+      "count": 20,
+      "description": "Cultive des ingrédients",
+      "tier": 0
+    },
+    {
+      "name": "Mine",
+      "emoji": "⛏️",
+      "base_cost": 12000,
+      "cost": 196398,
+      "cps": 47.0,
+      "count": 20,
+      "description": "Extrait du sucre cristallisé",
+      "tier": 0
+    },
+    {
+      "name": "Usine",
+      "emoji": "🏭",
+      "base_cost": 130000,
+      "cost": 2127649,
+      "cps": 260.0,
+      "count": 20,
+      "description": "Production industrielle",
+      "tier": 0
+    },
+    {
+      "name": "Banque",
+      "emoji": "🏦",
+      "base_cost": 1400000,
+      "cost": 26350125,
+      "cps": 1400.0,
+      "count": 21,
+      "description": "Investit dans les cookies",
+      "tier": 0
+    },
+    {
+      "name": "Temple",
+      "emoji": "⛩️",
+      "base_cost": 20000000,
+      "cost": 327330747,
+      "cps": 7800.0,
+      "count": 20,
+      "description": "Invoque des cookies divins",
+      "tier": 0
+    },
+    {
+      "name": "Tour de magie",
+      "emoji": "🔮",
+      "base_cost": 330000000,
+      "cost": 5400957339,
+      "cps": 44000.0,
+      "count": 20,
+      "description": "Transmute en cookies",
+      "tier": 0
+    },
+    {
+      "name": "Portail",
+      "emoji": "🌀",
+      "base_cost": 5100000000,
+      "cost": 11796609904,
+      "cps": 260000.0,
+      "count": 6,
+      "description": "Import interdimensionnel",
+      "tier": 0
+    },
+    {
+      "name": "Machine temporelle",
+      "emoji": "⏰",
+      "base_cost": 75000000000,
+      "cost": 75000000000,
+      "cps": 1600000.0,
+      "count": 0,
+      "description": "Cookies du futur",
+      "tier": 0
+    },
+    {
+      "name": "Condensateur",
+      "emoji": "⚛️",
+      "base_cost": 1000000000000,
+      "cost": 1000000000000,
+      "cps": 10000000.0,
+      "count": 0,
+      "description": "Compresse la matière",
+      "tier": 0
+    },
+    {
+      "name": "Prisme",
+      "emoji": "🌈",
+      "base_cost": 14000000000000,
+      "cost": 14000000000000,
+      "cps": 65000000.0,
+      "count": 0,
+      "description": "Convertit la lumière",
+      "tier": 0
+    },
+    {
+      "name": "Chancemaker",
+      "emoji": "🎰",
+      "base_cost": 170000000000000,
+      "cost": 170000000000000,
+      "cps": 430000000.0,
+      "count": 0,
+      "description": "Manipule la probabilité",
+      "tier": 0
+    },
+    {
+      "name": "Fractale",
+      "emoji": "📐",
+      "base_cost": 2100000000000000,
+      "cost": 2100000000000000,
+      "cps": 2900000000.0,
+      "count": 0,
+      "description": "Cookies infinis",
+      "tier": 0
+    },
+    {
+      "name": "Console JS",
+      "emoji": "💻",
+      "base_cost": 26000000000000000,
+      "cost": 26000000000000000,
+      "cps": 21000000000.0,
+      "count": 0,
+      "description": "Hack la réalité",
+      "tier": 0
+    }
+  ],
+  "powerups": [
+    {
+      "name": "Clic renforcé",
+      "emoji": "👆",
+      "base_cost": 100,
+      "cost": 1848,
+      "multiplier": 1,
+      "count": 16,
+      "description": "+1 cookie par clic"
+    },
+    {
+      "name": "Doigts dorés",
+      "emoji": "✨",
+      "base_cost": 500,
+      "cost": 7703,
+      "multiplier": 5,
+      "count": 15,
+      "description": "+5 cookies par clic"
+    },
+    {
+      "name": "Main bénie",
+      "emoji": "🙏",
+      "base_cost": 5000,
+      "cost": 77035,
+      "multiplier": 25,
+      "count": 15,
+      "description": "+25 cookies par clic"
+    },
+    {
+      "name": "Bras cybernétique",
+      "emoji": "🦾",
+      "base_cost": 50000,
+      "cost": 770351,
+      "multiplier": 100,
+      "count": 15,
+      "description": "+100 cookies par clic"
+    },
+    {
+      "name": "Main divine",
+      "emoji": "👼",
+      "base_cost": 500000,
+      "cost": 7703510,
+      "multiplier": 500,
+      "count": 15,
+      "description": "+500 cookies par clic"
+    },
+    {
+      "name": "Clic cosmique",
+      "emoji": "🌟",
+      "base_cost": 5000000,
+      "cost": 92442129,
+      "multiplier": 2500,
+      "count": 16,
+      "description": "+2500 cookies par clic"
+    }
+  ],
+  "prestige_level": 0,
+  "prestige_points": 0,
+  "lifetime_cookies": 118003502520,
+  "click_count": 3577,
+  "golden_cookies_clicked": 43
+}
