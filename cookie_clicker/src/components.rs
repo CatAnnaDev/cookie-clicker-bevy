@@ -81,3 +81,9 @@ pub struct PowerUpScrollArea;
 
 #[derive(Component)]
 pub struct BuildingScrollArea;
+
+#[derive(Component)]
+pub struct AchievementPopup {
+    pub timer: Timer,
+    pub index: usize,
+}

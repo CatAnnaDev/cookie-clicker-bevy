@@ -9,7 +9,7 @@ mod ui_fonts;
 mod ui_icons;
 use system::*;
 use crate::resources::{load_or_create_game_state, AchievementList, ClickPower, ComboSystem, GoldenCookieTimer, SaveTimer};
-use crate::ui::mouse_scroll;
+use crate::ui::{achievement_popup_system, mouse_scroll};
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.05, 0.05, 0.08);
 
@@ -36,7 +36,7 @@ fn main() {
             timer: Timer::from_seconds(3.0, TimerMode::Once),
             active: false,
         })
-        .insert_resource(AchievementList::new())
+        //.insert_resource(AchievementList::new())
         .add_systems(PreStartup, ui_fonts::load_fonts)
         .add_systems(Startup, ui::setup_ui)
         .add_systems(
@@ -52,7 +52,6 @@ fn main() {
                 animate_popup_system,
                 cleanup_popup_system,
                 animate_cookie_system,
-                update_stats_system,
                 golden_cookie_spawn_system,
                 golden_cookie_click_system,
                 golden_cookie_cleanup_system,
@@ -62,7 +61,9 @@ fn main() {
                 particle_cleanup_system,
                 milestone_system,
                 mouse_scroll,
+                update_stats_system,
             ),
         )
+        .add_systems(Update, achievement_popup_system)
         .run();
 }

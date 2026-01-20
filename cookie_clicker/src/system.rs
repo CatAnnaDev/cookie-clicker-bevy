@@ -1,9 +1,11 @@
 use bevy::prelude::*;
 use crate::components::*;
 use crate::resources::*;
+use crate::ui;
+use crate::ui::spawn_achievement_popup;
 use crate::utils::*;
 
-const CLICKS_PER_COMBO: u32 = 10;
+const CLICKS_PER_COMBO: u128 = 10;
 
 pub fn cookie_click_system(
     mut commands: Commands,
@@ -21,7 +23,7 @@ pub fn cookie_click_system(
             Interaction::Pressed => {
                 let base_earned = click_power.0;
                 let combo_mult = if combo.active { 1 + combo.combo } else { 1 };
-                let earned = base_earned * combo_mult as u64;
+                let earned = base_earned * combo_mult;
 
                 game_state.cookies += earned;
                 game_state.total_cookies_earned += earned;
@@ -37,7 +39,7 @@ pub fn cookie_click_system(
 
                 let combo_up = combo.combo > previous_combo;
 
-                let earned = base_earned * combo_mult as u64;
+                let earned = base_earned * combo_mult;
 
                 *color = Color::srgb(1.0, 0.7, 0.3).into();
                 scale.pulse = 1.0;
@@ -88,7 +90,7 @@ fn random_ring(min: f32, max: f32) -> Vec2 {
 
 fn spawn_popup(
     commands: &mut Commands,
-    earned: u64,
+    earned: u128,
     cookie_pos: Vec3,
     node: &Node,
     window_height: f32,
@@ -126,9 +128,9 @@ fn spawn_popup(
                 ..default()
             },
             text: Text::from_section(
-                format!("+{}", format_number(earned)),
+                format!("+{}", format_number(earned as u128)),
                 TextStyle {
-                    font_size: 40.0 * scale,
+                    font_size: 40.0 , // * scale
                     color: base_color,
                     ..default()
                 },
@@ -287,7 +289,7 @@ pub fn prestige_button_system(
     mut game_state: ResMut<GameState>,
 ) {
     for (interaction, mut color) in &mut interaction_query {
-        let prestige_cookies_needed = 10_000_000_000 * (game_state.prestige_level + 1) as u64;
+        let prestige_cookies_needed = prestige_requirement((game_state.prestige_level + 100) as u64);
         let can_prestige = game_state.cookies >= prestige_cookies_needed;
 
         match *interaction {
@@ -327,7 +329,7 @@ pub fn prestige_button_system(
 
 pub fn passive_income_system(mut game_state: ResMut<GameState>, time: Res<Time>) {
     if game_state.cookies_per_second > 0.0 {
-        let earned = (game_state.cookies_per_second * time.delta_seconds_f64()) as u64;
+        let earned = (game_state.cookies_per_second * time.delta_seconds_f64()) as u128;
         if earned > 0 {
             game_state.cookies += earned;
             game_state.total_cookies_earned += earned;
@@ -390,14 +392,17 @@ pub fn golden_cookie_click_system(
 ) {
     for (entity, interaction, golden) in &mut interaction_query {
         if *interaction == Interaction::Pressed {
-            let bonus = game_state.cookies_per_second as u64 * golden.multiplier * 60;
+            let mut bonus = game_state.cookies_per_second as u128 * golden.multiplier as u128 * 60;
+            if bonus == 0{
+                bonus = 2000;
+            }
             game_state.cookies += bonus;
             game_state.total_cookies_earned += bonus;
             game_state.lifetime_cookies += bonus;
             game_state.golden_cookies_clicked += 1;
 
             commands.entity(entity).despawn_recursive();
-            println!("✨ Golden Cookie! +{} cookies", format_number(bonus));
+            spawn_achievement_popup(&mut commands, "🍪", &format!("✨ Golden Cookie! +{} cookies", format_number(bonus)), 0.0);
         }
     }
 }
@@ -430,19 +435,19 @@ pub fn combo_system(
 }
 
 pub fn check_achievements_system(
-    game_state: Res<GameState>,
-    mut achievements: ResMut<AchievementList>,
+    mut commands: Commands,
+    mut game_state: ResMut<GameState>,
 ) {
     let mut to_unlock = Vec::new();
 
-    for (i, achievement) in achievements.achievements.iter().enumerate() {
-        if !achievements.unlocked[i] {
+    for (i, achievement) in game_state.achievements.achievements.iter().enumerate() {
+        if !game_state.achievements.unlocked[i] {
             let unlocked = match &achievement.requirement {
                 AchievementRequirement::TotalCookies(amount) => {
                     game_state.total_cookies_earned >= *amount
                 }
                 AchievementRequirement::CookiesPerSecond(amount) => {
-                    game_state.cookies_per_second as u64 >= *amount
+                    game_state.cookies_per_second as u128 >= *amount
                 }
                 AchievementRequirement::Clicks(amount) => {
                     game_state.click_count >= *amount
@@ -468,10 +473,21 @@ pub fn check_achievements_system(
         }
     }
 
+    let mut popup_index = 0;
+
     for (i, emoji, name) in to_unlock {
-        achievements.unlocked[i] = true;
-        println!("🏆 Succès débloqué: {} - {}", emoji, name);
+        game_state.achievements.unlocked[i] = true;
+
+        spawn_achievement_popup(
+            &mut commands,
+            &*emoji,
+            &*name,
+            popup_index as f32 * 90.0, // stack vertically
+        );
+
+        popup_index += 1;
     }
+
 }
 
 pub fn milestone_system(
@@ -479,19 +495,48 @@ pub fn milestone_system(
     mut milestone_query: Query<&mut Text, With<MilestoneText>>,
 ) {
     for mut text in &mut milestone_query {
-        let milestone = if game_state.total_cookies_earned >= 1_000_000_000_000_000 {
-            "🏆 LÉGENDE DES COOKIES!"
+        let milestone = if game_state.total_cookies_earned >= 1_000_000_000_000_000_000_000 {
+            "🌌 Déesse des Cookies"
+        } else if game_state.total_cookies_earned >= 100_000_000_000_000_000_000 {
+            "✨ Entité Suprême du Four"
+        } else if game_state.total_cookies_earned >= 10_000_000_000_000_000_000 {
+            "👁️ Architecte du Multivers Sucré"
+        } else if game_state.total_cookies_earned >= 1_000_000_000_000_000_000 {
+            "🔥 Impératrice des Cookies"
+        } else if game_state.total_cookies_earned >= 100_000_000_000_000_000 {
+            "🌠 Reine Cosmique du Sucre"
+        } else if game_state.total_cookies_earned >= 10_000_000_000_000_000 {
+            "💫 Souveraine des Dimensions Sucrées"
+        } else if game_state.total_cookies_earned >= 1_000_000_000_000_000 {
+            "🏆 Légende des Cookies"
+        } else if game_state.total_cookies_earned >= 100_000_000_000_000 {
+            "💎 Maîtresse Absolue du Four"
+        } else if game_state.total_cookies_earned >= 10_000_000_000_000 {
+            "👑 Grande Reine des Cookies"
         } else if game_state.total_cookies_earned >= 1_000_000_000_000 {
-            "💎 Maître des Cookies"
+            "👸 Reine des Cookies"
+        } else if game_state.total_cookies_earned >= 100_000_000_000 {
+            "🌟 Duchesse du Sucre"
+        } else if game_state.total_cookies_earned >= 10_000_000_000 {
+            "🎖️ Marquise des Cookies"
         } else if game_state.total_cookies_earned >= 1_000_000_000 {
-            "👑 Roi des Cookies"
+            "⭐ Baronne des Cookies"
+        } else if game_state.total_cookies_earned >= 100_000_000 {
+            "🍰 Dame du Four"
+        } else if game_state.total_cookies_earned >= 10_000_000 {
+            "🥐 Experte Pâtissière"
         } else if game_state.total_cookies_earned >= 1_000_000 {
-            "⭐ Baron des Cookies"
+            "🍪 Maîtresse Boulangère"
+        } else if game_state.total_cookies_earned >= 100_000 {
+            "🧁 Pâtissière Confirmée"
+        } else if game_state.total_cookies_earned >= 10_000 {
+            "🥖 Apprentie Boulangère"
         } else if game_state.total_cookies_earned >= 1_000 {
-            "🎖️ Apprenti Baker"
+            "🎀 Novice du Sucre"
         } else {
-            "🌱 Débutant"
+            "🌱 Débutante"
         };
+
 
         text.sections[0].value = milestone.to_string();
     }
@@ -536,7 +581,7 @@ pub fn animate_popup_system(
         let alpha = 1.0 - progress;
         let scale = 1.0 + progress * 0.4;
         text.sections[0].style.color.set_alpha(alpha);
-        text.sections[0].style.font_size = 42.0 * scale;
+        text.sections[0].style.font_size = 40.0; // * scale
     }
 }
 
@@ -591,11 +636,11 @@ pub fn update_ui_system(
     mut upgrade_query: Query<(&mut Text, &UpgradeText), (Without<CookieCounter>, Without<CpsCounter>, Without<StatsText>)>,
 ) {
     for mut text in &mut cookie_query {
-        text.sections[0].value = format!("{} cookies", format_number(game_state.cookies));
+        text.sections[0].value = format!("{} cookies", format_number(game_state.cookies as u128));
     }
 
     for mut text in &mut cps_query {
-        text.sections[0].value = format!("par seconde: {}", format_number(game_state.cookies_per_second as u64));
+        text.sections[0].value = format!("par seconde: {}", format_number(game_state.cookies_per_second as u128));
     }
 
     for mut text in &mut stats_query {
@@ -606,9 +651,9 @@ pub fn update_ui_system(
             Clics: {}\n\
             Golden cookies: {}\n\
             Prestige: ⭐ Niveau {}",
-            format_number(game_state.total_cookies_earned),
-            format_number(game_state.cookies_per_click),
-            format_number(game_state.click_count),
+            format_number(game_state.total_cookies_earned as u128),
+            format_number(game_state.cookies_per_click as u128),
+            format_number(game_state.click_count as u128),
             game_state.golden_cookies_clicked,
             game_state.prestige_level
         );
@@ -623,8 +668,8 @@ pub fn update_ui_system(
                 upgrade.name,
                 upgrade.count,
                 upgrade.description,
-                format_number(upgrade.cost),
-                format_number(upgrade.cps as u64)
+                format_number(upgrade.cost as u128),
+                format_number(upgrade.cps as u128)
             );
         }
     }
@@ -633,7 +678,6 @@ pub fn update_ui_system(
 pub fn update_stats_system(
     game_state: Res<GameState>,
     combo: Res<ComboSystem>,
-    achievements: Res<AchievementList>,
     mut powerup_query: Query<(&mut Text, &PowerUpText), Without<ComboText>>,
     mut combo_query: Query<&mut Text, (With<ComboText>, Without<PowerUpText>, Without<AchievementText>)>,
     mut achievement_query: Query<&mut Text, (With<AchievementText>, Without<ComboText>, Without<PowerUpText>)>,
@@ -662,13 +706,13 @@ pub fn update_stats_system(
     }
 
     for mut text in &mut achievement_query {
-        let unlocked = achievements.unlocked.iter().filter(|&&x| x).count();
-        let total = achievements.achievements.len();
+        let unlocked = game_state.achievements.unlocked.iter().filter(|&&x| x).count();
+        let total = game_state.achievements.achievements.len();
         text.sections[0].value = format!("🏆 Succès: {}/{}", unlocked, total);
     }
 
     for mut text in &mut prestige_query {
-        let prestige_cookies_needed = 10_000_000_000 * (game_state.prestige_level + 1) as u64;
+        let prestige_cookies_needed = prestige_requirement((game_state.prestige_level + 100) as u64);
         if game_state.cookies >= prestige_cookies_needed {
             let bonus = (game_state.prestige_level + 1) as f64 * 0.01 * 100.0;
             text.sections[0].value = format!(
@@ -686,6 +730,14 @@ pub fn update_stats_system(
         }
     }
 }
+
+pub fn prestige_requirement(level: u64) -> u128 {
+    let base = 1e11;
+    let exponent = 1.15 + (level as f64 * 0.005);
+
+    (base * (level as f64 + 1.0).powf(exponent)) as u128
+}
+
 
 pub fn auto_save_system(
     mut save_timer: ResMut<SaveTimer>,

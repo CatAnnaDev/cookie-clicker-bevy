@@ -7,52 +7,53 @@ const SAVE_FILE: &str = "cookie_save.json";
 
 #[derive(Resource, Serialize, Deserialize, Clone)]
 pub struct GameState {
-    pub cookies: u64,
-    pub total_cookies_earned: u64,
+    pub cookies: u128,
+    pub total_cookies_earned: u128,
     pub cookies_per_second: f64,
-    pub cookies_per_click: u64,
+    pub cookies_per_click: u128,
     pub upgrades: Vec<Upgrade>,
     pub powerups: Vec<PowerUp>,
-    pub prestige_level: u32,
-    pub prestige_points: u64,
-    pub lifetime_cookies: u64,
-    pub click_count: u64,
-    pub golden_cookies_clicked: u32,
+    pub prestige_level: u128,
+    pub prestige_points: u128,
+    pub lifetime_cookies: u128,
+    pub click_count: u128,
+    pub golden_cookies_clicked: u128,
+    pub achievements: AchievementList,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Upgrade {
     pub name: String,
     pub emoji: String,
-    pub base_cost: u64,
-    pub cost: u64,
+    pub base_cost: u128,
+    pub cost: u128,
     pub cps: f64,
-    pub count: u32,
+    pub count: u128,
     pub description: String,
-    pub tier: u32,
+    pub tier: u128,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct PowerUp {
     pub name: String,
     pub emoji: String,
-    pub base_cost: u64,
-    pub cost: u64,
-    pub multiplier: u64,
-    pub count: u32,
+    pub base_cost: u128,
+    pub cost: u128,
+    pub multiplier: u128,
+    pub count: u128,
     pub description: String,
 }
 
 impl Upgrade {
-    pub fn calculate_cost(&self) -> u64 {
+    pub fn calculate_cost(&self) -> u128 {
         let base = self.base_cost as f64 * 1.15_f64.powi(self.count as i32);
-        (base * (1.0 - (self.tier as f64 * 0.01))) as u64
+        (base * (1.0 - (self.tier as f64 * 0.01))) as u128
     }
 }
 
 impl PowerUp {
-    pub fn calculate_cost(&self) -> u64 {
-        (self.base_cost as f64 * 1.2_f64.powi(self.count as i32)) as u64
+    pub fn calculate_cost(&self) -> u128 {
+        (self.base_cost as f64 * 1.2_f64.powi(self.count as i32)) as u128
     }
 }
 
@@ -60,26 +61,26 @@ impl PowerUp {
 pub struct SaveTimer(pub Timer);
 
 #[derive(Resource)]
-pub struct ClickPower(pub u64);
+pub struct ClickPower(pub u128);
 
 #[derive(Resource)]
 pub struct GoldenCookieTimer(pub Timer);
 
 #[derive(Resource)]
 pub struct ComboSystem {
-    pub clicks: u32,
-    pub combo: u32,
+    pub clicks: u128,
+    pub combo: u128,
     pub active: bool,
     pub timer: Timer,
 }
 
-#[derive(Resource, Clone)]
+#[derive(Resource, Serialize, Deserialize, Clone)]
 pub struct AchievementList {
     pub achievements: Vec<Achievement>,
     pub unlocked: Vec<bool>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Achievement {
     pub name: String,
     pub description: String,
@@ -87,73 +88,24 @@ pub struct Achievement {
     pub requirement: AchievementRequirement,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum AchievementRequirement {
-    TotalCookies(u64),
-    CookiesPerSecond(u64),
-    Clicks(u64),
-    GoldenCookies(u32),
-    BuildingCount(usize, u32),
-    PrestigeLevel(u32),
+    TotalCookies(u128),
+    CookiesPerSecond(u128),
+    Clicks(u128),
+    GoldenCookies(u128),
+    BuildingCount(usize, u128),
+    PrestigeLevel(u128),
 }
-
-impl AchievementList {
-    pub fn new() -> Self {
-        let achievements = vec![
-            Achievement {
-                name: "Premier cookie".into(),
-                description: "Cliquez votre premier cookie".into(),
-                emoji: "🍪".into(),
-                requirement: AchievementRequirement::TotalCookies(1),
-            },
-            Achievement {
-                name: "Centenaire".into(),
-                description: "Gagnez 100 cookies".into(),
-                emoji: "💯".into(),
-                requirement: AchievementRequirement::TotalCookies(100),
-            },
-            Achievement {
-                name: "Millionnaire".into(),
-                description: "Gagnez 1 million de cookies".into(),
-                emoji: "💰".into(),
-                requirement: AchievementRequirement::TotalCookies(1_000_000),
-            },
-            Achievement {
-                name: "Milliardaire".into(),
-                description: "Gagnez 1 milliard de cookies".into(),
-                emoji: "🏆".into(),
-                requirement: AchievementRequirement::TotalCookies(1_000_000_000),
-            },
-            Achievement {
-                name: "Clicker Pro".into(),
-                description: "Cliquez 1000 fois".into(),
-                emoji: "👆".into(),
-                requirement: AchievementRequirement::Clicks(1000),
-            },
-            Achievement {
-                name: "Chasseur d'or".into(),
-                description: "Cliquez 10 golden cookies".into(),
-                emoji: "✨".into(),
-                requirement: AchievementRequirement::GoldenCookies(10),
-            },
-            Achievement {
-                name: "Usine à cookies".into(),
-                description: "Produisez 1000 cookies/sec".into(),
-                emoji: "🏭".into(),
-                requirement: AchievementRequirement::CookiesPerSecond(1000),
-            },
-            Achievement {
-                name: "Ascension".into(),
-                description: "Atteignez le prestige niveau 1".into(),
-                emoji: "⭐".into(),
-                requirement: AchievementRequirement::PrestigeLevel(1),
-            },
-        ];
-
-        let unlocked = vec![false; achievements.len()];
-        Self { achievements, unlocked }
+fn ach(name: &str, desc: &str, req: AchievementRequirement) -> Achievement {
+    Achievement {
+        name: name.into(),
+        description: desc.into(),
+        emoji: "".into(),
+        requirement: req,
     }
 }
+
 
 pub fn load_or_create_game_state() -> GameState {
     let save_path = PathBuf::from(SAVE_FILE);
@@ -172,7 +124,7 @@ pub fn load_or_create_game_state() -> GameState {
 
                 for powerup in &mut state.powerups {
                     powerup.cost = powerup.calculate_cost();
-                    state.cookies_per_click += powerup.multiplier * powerup.count as u64;
+                    state.cookies_per_click += powerup.multiplier * powerup.count;
                 }
 
                 println!("💾 Sauvegarde chargée : {} cookies, {} CPS, {} CPC", state.cookies, state.cookies_per_second, state.cookies_per_click);
@@ -181,7 +133,101 @@ pub fn load_or_create_game_state() -> GameState {
         }
     }
 
-    println!("✨ Nouvelle partie créée");
+    let powerups = vec![
+        pu("Clic renforcé", 100, 1),
+        pu("Double clic", 500, 2),
+        pu("Triple frappe", 2_000, 5),
+        pu("Clic furieux", 10_000, 10),
+        pu("Doigt d'acier", 50_000, 25),
+        pu("Bras cybernétique", 250_000, 50),
+        pu("Main divine", 1_000_000, 100),
+        pu("Clic cosmique", 5_000_000, 250),
+        pu("Doigt quantique", 20_000_000, 500),
+        pu("Main fractale", 100_000_000, 1_000),
+        pu("Hyper clic", 500_000_000, 2_500),
+        pu("Clic critique", 1_000_000_000, 5_000),
+        pu("Clic instable", 2_500_000_000, 10_000),
+        pu("Résonance du combo", 5_000_000_000, 20_000),
+        pu("Clic abyssal", 10_000_000_000, 50_000),
+        pu("Clic divin absolu", 50_000_000_000, 100_000),
+        pu("Main temporelle", 100_000_000_000, 250_000),
+        pu("Doigt infini", 500_000_000_000, 500_000),
+        pu("Clic paradoxal", 1_000_000_000_000, 1_000_000),
+        pu("Clic dimensionnel", 5_000_000_000_000, 2_500_000),
+        pu("Clic cosmologique", 10_000_000_000_000, 5_000_000),
+        pu("Clic primordial", 50_000_000_000_000, 10_000_000),
+        pu("Clic universel", 100_000_000_000_000, 25_000_000),
+        pu("Clic omnipotent", 500_000_000_000_000, 50_000_000),
+        pu("Clic absolu", 1_000_000_000_000_000, 100_000_000),
+    ];
+
+    let upgrades = vec![
+        up("Curseur", 15, 0.1, 0),
+        up("Grand-mère", 100, 1.0, 0),
+        up("Ferme", 1_100, 8.0, 0),
+        up("Mine", 12_000, 47.0, 0),
+        up("Usine", 130_000, 260.0, 0),
+        up("Banque", 1_400_000, 1_400.0, 0),
+        up("Temple", 20_000_000, 7_800.0, 0),
+        up("Tour de magie", 330_000_000, 44_000.0, 0),
+        up("Portail", 5_100_000_000, 260_000.0, 0),
+        up("Machine temporelle", 75_000_000_000, 1_600_000.0, 0),
+        up("Condensateur", 1_000_000_000_000, 10_000_000.0, 1),
+        up("Prisme", 14_000_000_000_000, 65_000_000.0, 1),
+        up("Chancemaker", 170_000_000_000_000, 430_000_000.0, 1),
+        up("Fractale", 2_100_000_000_000_000, 2_900_000_000.0, 1),
+        up("Console JS", 26_000_000_000_000_000, 21_000_000_000.0, 1),
+        up("Simulateur de réalité", 80_000_000_000_000_000, 120_000_000_000.0, 2),
+        up("Forge cosmique", 250_000_000_000_000_000, 900_000_000_000.0, 2),
+        up("Singularité", 900_000_000_000_000_000, 7_000_000_000_000.0, 2),
+        up("Source primordiale", 3_000_000_000_000_000_000, 55_000_000_000_000.0, 3),
+        up("Moteur de l'existence", 10_000_000_000_000_000_000, 400_000_000_000_000.0, 3),
+        up("Cœur du multivers", 50_000_000_000_000_000_000, 3_500_000_000_000_000.0, 3),
+        up("Dieu mathématique", 200_000_000_000_000_000_000, 30_000_000_000_000_000.0, 4),
+        up("Entité absolue", 1_000_000_000_000_000_000_000, 250_000_000_000_000_000.0, 4),
+        up("Origine", 5_000_000_000_000_000_000_000, 2_000_000_000_000_000_000.0, 5),
+    ];
+
+    let achievements = vec![
+        // === CLICKS ===
+        ach("Premiers pas", "Cliquez 10 fois", AchievementRequirement::Clicks(10)),
+        ach("Addict", "Cliquez 1 000 fois", AchievementRequirement::Clicks(1_000)),
+        ach("Machine à cliquer", "Cliquez 100 000 fois", AchievementRequirement::Clicks(100_000)),
+        ach("Doigt divin", "Cliquez 1 million de fois", AchievementRequirement::Clicks(1_000_000)),
+
+        // === TOTAL COOKIES ===
+        ach("Accumulation", "Gagnez 1 million de cookies", AchievementRequirement::TotalCookies(1_000_000)),
+        ach("Capitaliste", "Gagnez 1 milliard de cookies", AchievementRequirement::TotalCookies(1_000_000_000)),
+        ach("Tycoon", "Gagnez 1 trillion de cookies", AchievementRequirement::TotalCookies(1_000_000_000_000)),
+        ach("Entité cosmique", "Gagnez 1 quintillion de cookies", AchievementRequirement::TotalCookies(1_000_000_000_000_000_000)),
+
+        // === CPS ===
+        ach("Production stable", "1 000 cookies/sec", AchievementRequirement::CookiesPerSecond(1_000)),
+        ach("Usine infernale", "1 million cookies/sec", AchievementRequirement::CookiesPerSecond(1_000_000)),
+        ach("Réalité industrielle", "1 milliard cookies/sec", AchievementRequirement::CookiesPerSecond(1_000_000_000)),
+
+        // === BUILDINGS ===
+        ach("Collectionneur", "50 curseurs", AchievementRequirement::BuildingCount(0, 50)),
+        ach("Maison de retraite", "50 grand-mères", AchievementRequirement::BuildingCount(1, 50)),
+        ach("Ferme intensive", "50 fermes", AchievementRequirement::BuildingCount(2, 50)),
+        ach("Empire industriel", "100 usines", AchievementRequirement::BuildingCount(4, 100)),
+
+        // === GOLDEN ===
+        ach("Chance insolente", "10 golden cookies", AchievementRequirement::GoldenCookies(10)),
+        ach("Béni des dieux", "100 golden cookies", AchievementRequirement::GoldenCookies(100)),
+
+        // === PRESTIGE ===
+        ach("Renaissance", "Prestige niveau 1", AchievementRequirement::PrestigeLevel(1)),
+        ach("Ascension", "Prestige niveau 5", AchievementRequirement::PrestigeLevel(5)),
+        ach("Immortel", "Prestige niveau 25", AchievementRequirement::PrestigeLevel(25)),
+        ach("Transcendance", "Prestige niveau 100", AchievementRequirement::PrestigeLevel(100)),
+    ];
+
+    let unlocked = vec![false; achievements.len()];
+    let achievements = AchievementList { achievements, unlocked };
+
+
+    println!("✨ Nouvelle partie créée: {} powerups load {} builds load", powerups.len(), upgrades.len());
     GameState {
         cookies: 0,
         total_cookies_earned: 0,
@@ -192,216 +238,38 @@ pub fn load_or_create_game_state() -> GameState {
         prestige_level: 0,
         prestige_points: 0,
         lifetime_cookies: 0,
-        upgrades: vec![
-            Upgrade {
-                name: "Curseur".into(),
-                emoji: "☝️".into(),
-                base_cost: 15,
-                cost: 15,
-                cps: 0.1,
-                count: 0,
-                tier: 0,
-                description: "Clique automatiquement".into(),
-            },
-            Upgrade {
-                name: "Grand-mère".into(),
-                emoji: "👵".into(),
-                base_cost: 100,
-                cost: 100,
-                cps: 1.0,
-                count: 0,
-                tier: 0,
-                description: "Cuisine des cookies maison".into(),
-            },
-            Upgrade {
-                name: "Ferme".into(),
-                emoji: "🌾".into(),
-                base_cost: 1100,
-                cost: 1100,
-                cps: 8.0,
-                count: 0,
-                tier: 0,
-                description: "Cultive des ingrédients".into(),
-            },
-            Upgrade {
-                name: "Mine".into(),
-                emoji: "⛏️".into(),
-                base_cost: 12000,
-                cost: 12000,
-                cps: 47.0,
-                count: 0,
-                tier: 0,
-                description: "Extrait du sucre cristallisé".into(),
-            },
-            Upgrade {
-                name: "Usine".into(),
-                emoji: "🏭".into(),
-                base_cost: 130000,
-                cost: 130000,
-                cps: 260.0,
-                count: 0,
-                tier: 0,
-                description: "Production industrielle".into(),
-            },
-            Upgrade {
-                name: "Banque".into(),
-                emoji: "🏦".into(),
-                base_cost: 1400000,
-                cost: 1400000,
-                cps: 1400.0,
-                count: 0,
-                tier: 0,
-                description: "Investit dans les cookies".into(),
-            },
-            Upgrade {
-                name: "Temple".into(),
-                emoji: "⛩️".into(),
-                base_cost: 20000000,
-                cost: 20000000,
-                cps: 7800.0,
-                count: 0,
-                tier: 0,
-                description: "Invoque des cookies divins".into(),
-            },
-            Upgrade {
-                name: "Tour de magie".into(),
-                emoji: "🔮".into(),
-                base_cost: 330000000,
-                cost: 330000000,
-                cps: 44000.0,
-                count: 0,
-                tier: 0,
-                description: "Transmute en cookies".into(),
-            },
-            Upgrade {
-                name: "Portail".into(),
-                emoji: "🌀".into(),
-                base_cost: 5100000000,
-                cost: 5100000000,
-                cps: 260000.0,
-                count: 0,
-                tier: 0,
-                description: "Import interdimensionnel".into(),
-            },
-            Upgrade {
-                name: "Machine temporelle".into(),
-                emoji: "⏰".into(),
-                base_cost: 75000000000,
-                cost: 75000000000,
-                cps: 1600000.0,
-                count: 0,
-                tier: 0,
-                description: "Cookies du futur".into(),
-            },
-            Upgrade {
-                name: "Condensateur".into(),
-                emoji: "⚛️".into(),
-                base_cost: 1000000000000,
-                cost: 1000000000000,
-                cps: 10000000.0,
-                count: 0,
-                tier: 0,
-                description: "Compresse la matière".into(),
-            },
-            Upgrade {
-                name: "Prisme".into(),
-                emoji: "🌈".into(),
-                base_cost: 14000000000000,
-                cost: 14000000000000,
-                cps: 65000000.0,
-                count: 0,
-                tier: 0,
-                description: "Convertit la lumière".into(),
-            },
-            Upgrade {
-                name: "Chancemaker".into(),
-                emoji: "🎰".into(),
-                base_cost: 170000000000000,
-                cost: 170000000000000,
-                cps: 430000000.0,
-                count: 0,
-                tier: 0,
-                description: "Manipule la probabilité".into(),
-            },
-            Upgrade {
-                name: "Fractale".into(),
-                emoji: "📐".into(),
-                base_cost: 2100000000000000,
-                cost: 2100000000000000,
-                cps: 2900000000.0,
-                count: 0,
-                tier: 0,
-                description: "Cookies infinis".into(),
-            },
-            Upgrade {
-                name: "Console JS".into(),
-                emoji: "💻".into(),
-                base_cost: 26000000000000000,
-                cost: 26000000000000000,
-                cps: 21000000000.0,
-                count: 0,
-                tier: 0,
-                description: "Hack la réalité".into(),
-            },
-        ],
-        powerups: vec![
-            PowerUp {
-                name: "Clic renforcé".into(),
-                emoji: "👆".into(),
-                base_cost: 100,
-                cost: 100,
-                multiplier: 1,
-                count: 0,
-                description: "+1 cookie par clic".into(),
-            },
-            PowerUp {
-                name: "Doigts dorés".into(),
-                emoji: "✨".into(),
-                base_cost: 500,
-                cost: 500,
-                multiplier: 5,
-                count: 0,
-                description: "+5 cookies par clic".into(),
-            },
-            PowerUp {
-                name: "Main bénie".into(),
-                emoji: "🙏".into(),
-                base_cost: 5000,
-                cost: 5000,
-                multiplier: 25,
-                count: 0,
-                description: "+25 cookies par clic".into(),
-            },
-            PowerUp {
-                name: "Bras cybernétique".into(),
-                emoji: "🦾".into(),
-                base_cost: 50000,
-                cost: 50000,
-                multiplier: 100,
-                count: 0,
-                description: "+100 cookies par clic".into(),
-            },
-            PowerUp {
-                name: "Main divine".into(),
-                emoji: "👼".into(),
-                base_cost: 500000,
-                cost: 500000,
-                multiplier: 500,
-                count: 0,
-                description: "+500 cookies par clic".into(),
-            },
-            PowerUp {
-                name: "Clic cosmique".into(),
-                emoji: "🌟".into(),
-                base_cost: 5000000,
-                cost: 5000000,
-                multiplier: 2500,
-                count: 0,
-                description: "+2500 cookies par clic".into(),
-            },
-        ],
+        upgrades,
+        powerups,
+        achievements,
     }
 }
+
+fn pu(name: &str, base: u128, mult: u128) -> PowerUp {
+    PowerUp {
+        name: name.into(),
+        emoji: "".into(),
+        base_cost: base,
+        cost: base,
+        multiplier: mult,
+        count: 0,
+        description: format!("+{} cookies par clic", mult),
+    }
+}
+
+
+fn up(name: &str, base: u128, cps: f64, tier: u128) -> Upgrade {
+    Upgrade {
+        name: name.into(),
+        emoji: "".into(),
+        base_cost: base,
+        cost: base,
+        cps,
+        count: 0,
+        tier,
+        description: format!("Produit {} cookies/sec", cps),
+    }
+}
+
 
 pub fn save_game_state(game_state: &GameState) {
     if let Ok(data) = serde_json::to_string_pretty(game_state) {

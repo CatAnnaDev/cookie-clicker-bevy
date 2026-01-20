@@ -5,8 +5,9 @@ use crate::ui_theme::UiTheme;
 use bevy::asset::AssetPath;
 use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
+use crate::resources::GameState;
 
-pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiFonts>) {
+pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiFonts>, game_state: Res<GameState>) {
     commands.spawn(Camera2dBundle::default());
 
     // ROOT
@@ -282,7 +283,7 @@ pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiF
                     &fonts,
                     "POWER UPS",
                     AssetPath::from("ui/icons/power.png"),
-                    6,
+                    game_state.powerups.len(),
                     true,
                 );
                 section(
@@ -291,7 +292,7 @@ pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiF
                     &fonts,
                     "BUILDINGS",
                     AssetPath::from("ui/icons/building.png"),
-                    15,
+                    game_state.upgrades.len(),
                     false,
                 );
             });
@@ -300,21 +301,34 @@ pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiF
 
 pub fn mouse_scroll(
     mut mouse_wheel_events: EventReader<MouseWheel>,
-    mut query_list: Query<(&mut ScrollingList, &mut Style, &Parent)>,
-    query_node: Query<&Interaction>,
+    mut query_scroll: Query<(&mut ScrollingList, &mut Style, &Children, &Interaction), With<Node>>,
+    query_children: Query<&Interaction>,
 ) {
-    for mouse_wheel_event in mouse_wheel_events.read() {
-        for (mut scrolling_list, mut style, parent) in &mut query_list {
-            if let Ok(interaction) = query_node.get(parent.get()) {
-                if *interaction == Interaction::Hovered {
-                    scrolling_list.position += mouse_wheel_event.y * 25.0;
-                    scrolling_list.position = scrolling_list.position.clamp(-2000.0, 0.0);
-                    style.top = Val::Px(scrolling_list.position);
+    for event in mouse_wheel_events.read() {
+        for (mut scrolling_list, mut style, children, interaction) in &mut query_scroll {
+
+            // Vérifie hover parent OU hover sur un enfant
+            let mut is_hovered = *interaction == Interaction::Hovered;
+            if !is_hovered {
+                for &child in children.iter() {
+                    if let Ok(child_interaction) = query_children.get(child) {
+                        if *child_interaction == Interaction::Hovered {
+                            is_hovered = true;
+                            break;
+                        }
+                    }
                 }
+            }
+
+            if is_hovered {
+                scrolling_list.position += event.y * 25.0;
+                scrolling_list.position = scrolling_list.position.clamp(-2000.0, 0.0);
+                style.top = Val::Px(scrolling_list.position);
             }
         }
     }
 }
+
 
 fn section(
     parent: &mut ChildBuilder,
@@ -373,7 +387,7 @@ fn section(
                         ..default()
                     },
                     ScrollingList { position: 0.0 },
-                ))
+                )).insert(Interaction::default())
                 .with_children(|list| {
                     for i in 0..count {
                         if is_powerup {
@@ -388,7 +402,7 @@ fn section(
                                     ..default()
                                 },
                                 PowerUpButton { powerup_index: i },
-                            ))
+                            )).insert(Interaction::default())
                                 .with_children(|btn| {
                                     btn.spawn((
                                         TextBundle::from_section(
@@ -432,4 +446,88 @@ fn section(
                     }
                 });
         });
+}
+
+
+pub fn spawn_achievement_popup(
+    commands: &mut Commands,
+    emoji: &str,
+    name: &str,
+    offset_y: f32,
+) {
+    commands.spawn((
+        NodeBundle {
+            style: Style {
+                position_type: PositionType::Absolute,
+                right: Val::Px(-320.0), // start off-screen
+                top: Val::Px(40.0 + offset_y),
+                width: Val::Px(300.0),
+                height: Val::Px(80.0),
+                padding: UiRect::all(Val::Px(10.0)),
+                justify_content: JustifyContent::SpaceBetween,
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            background_color: Color::rgba(0.08, 0.08, 0.08, 0.95).into(),
+            z_index: ZIndex::Global(200),
+            ..default()
+        },
+        AchievementPopup {
+            timer: Timer::from_seconds(4.0, TimerMode::Once),
+            index: 0,
+        },
+    ))
+        .with_children(|parent| {
+            parent.spawn(TextBundle::from_section(
+                emoji,
+                TextStyle {
+                    font_size: 36.0,
+                    color: Color::WHITE,
+                    ..default()
+                },
+            ));
+
+            parent.spawn(
+                TextBundle::from_section(
+                    format!("{}", name),
+                    TextStyle {
+                        font_size: 18.0,
+                        color: Color::WHITE,
+                        ..default()
+                    },
+                )
+                    .with_style(Style {
+                        margin: UiRect::left(Val::Px(10.0)),
+                        ..default()
+                    }),
+            );
+        });
+}
+
+pub fn achievement_popup_system(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut query: Query<(Entity, &mut Style, &mut AchievementPopup)>,
+) {
+    for (entity, mut style, mut popup) in &mut query {
+        popup.timer.tick(time.delta());
+
+        // Slide in
+        let t = popup.timer.elapsed_secs();
+
+        if t < 0.4 {
+            style.right = Val::Px(-320.0 + t * 800.0);
+        }
+        // Slide out
+        else if popup.timer.remaining_secs() < 0.4 {
+            let out_t = 0.4 - popup.timer.remaining_secs();
+            style.right = Val::Px(out_t * 800.0);
+        } else {
+            style.right = Val::Px(20.0);
+        }
+
+        if popup.timer.finished() {
+            commands.entity(entity).despawn_recursive();
+        }
+    }
 }
