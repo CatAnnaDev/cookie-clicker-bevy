@@ -4,11 +4,10 @@ mod resources;
 mod ui;
 mod utils;
 mod system;
-mod ui_theme;
 mod ui_fonts;
 mod ui_icons;
 use system::*;
-use crate::resources::{load_or_create_game_state, AchievementList, ClickPower, ComboSystem, GoldenCookieTimer, SaveTimer};
+use crate::resources::{load_or_create_game_state, ClickPower, ComboSystem, GoldenCookieTimer, SaveTimer};
 use crate::ui::{achievement_popup_system, mouse_scroll};
 
 const BACKGROUND_COLOR: Color = Color::srgb(0.05, 0.05, 0.08);
@@ -29,7 +28,7 @@ fn main() {
         .insert_resource(save.clone())
         .insert_resource(SaveTimer(Timer::from_seconds(5.0, TimerMode::Repeating)))
         .insert_resource(ClickPower(save.cookies_per_click))
-        .insert_resource(GoldenCookieTimer(Timer::from_seconds(30.0, TimerMode::Repeating)))
+        .insert_resource(GoldenCookieTimer::default())
         .insert_resource(ComboSystem {
             clicks: 0,
             combo: 0,
@@ -53,8 +52,9 @@ fn main() {
                 cleanup_popup_system,
                 animate_cookie_system,
                 golden_cookie_spawn_system,
+                golden_cookie_lifetime_system,
                 golden_cookie_click_system,
-                golden_cookie_cleanup_system,
+                //golden_cookie_cleanup_system,
                 combo_system,
                 check_achievements_system,
                 particle_system,
