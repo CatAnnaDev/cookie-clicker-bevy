@@ -56,11 +56,17 @@ jobs:
       - name: Run tests
         run: cargo test --verbose
 
+      - name: Prepare dist folder
+        run: |
+          mkdir -p dist
+          cp target/release/cookie_clicker dist/
+          cp -r assets dist/
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: cookie-clicker-linux
-          path: target/release/cookie_clicker
+          path: dist
 
   # Optionnel: Build Windows
   build-windows:
@@ -84,11 +90,18 @@ jobs:
       - name: Build
         run: cargo build --verbose --release
 
+      - name: Prepare dist folder
+        run: |
+          mkdir dist
+          copy target\release\cookie_clicker.exe dist\
+          xcopy assets dist\assets /E /I
+
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: cookie-clicker-windows
-          path: target/release/cookie_clicker.exe
+          path: dist
 
   # Optionnel: Build macOS
   build-macos:
@@ -112,8 +125,15 @@ jobs:
       - name: Build
         run: cargo build --verbose --release
 
+      - name: Prepare dist folder
+        run: |
+          mkdir -p dist
+          cp target/release/cookie_clicker dist/
+          cp -r assets dist/
+
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: cookie-clicker-macos
-          path: target/release/cookie_clicker
+          path: dist
