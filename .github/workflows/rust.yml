@@ -1,117 +1,119 @@
-name: Rust
+name: Build Cookie Clicker
 
 on:
-  release:
-    types:
-      - created
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 env:
   CARGO_TERM_COLOR: always
 
-defaults:
-  run:
-    # necessary for windows
-    shell: bash
-
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Deploying to $GITHUB_REF"
-      - uses: actions/checkout@v3
-      - name: Cargo cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ./target
-          key: test-cargo-registry
-      - name: List
-        run: find ./
-      - name: Run tests
-        run: cargo test --verbose
-
   build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - TARGET: x86_64-unknown-linux-gnu
-            OS: ubuntu-latest
-          - TARGET: x86_64-apple-darwin
-            OS: macos-latest
-          - TARGET: x86_64-pc-windows-msvc
-            OS: windows-latest
-    needs: test
-    runs-on: ${{ matrix.OS }}
-    env:
-      NAME: cookie_clicker # change with the name of your project
-      TARGET: ${{ matrix.TARGET }}
-      OS: ${{ matrix.OS }}
-    steps:
-      - uses: actions/checkout@v3
-      - name: Cargo cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/registry
-            ./target
-          key: build-cargo-registry-${{matrix.TARGET}}
-      - name: List
-        run: find ./
-      - name: Install and configure dependencies
-        run: |
-          # dependencies are only needed on ubuntu as that's the only place where
-          # we make cross-compilation
-          if [[ $OS =~ ^ubuntu.*$ ]]; then
-            sudo apt-get install -qq crossbuild-essential-arm64 libssl-dev openssl libasound2 alsa-lib
-          fi
-
-          # some additional configuration for cross-compilation on linux
-          cat >>~/.cargo/config <<EOF
-          EOF
-      - name: Install rust target
-        run: rustup target add $TARGET
-      - name: Run build
-        run: cargo build --release --verbose --target $TARGET
-      - name: List target
-        run: find ./target
-      - name: Compress
-        run: |
-          mkdir -p ./artifacts
-          # windows is the only OS using a different convention for executable file name
-          if [[ $OS =~ ^windows.*$ ]]; then
-              EXEC=$NAME.exe
-          else
-              EXEC=$NAME
-          fi
-          if [[ $GITHUB_REF_TYPE =~ ^tag$ ]]; then
-            TAG=$GITHUB_REF_NAME
-          else
-            TAG=$GITHUB_SHA
-          fi
-          mv ./target/$TARGET/release/$EXEC ./$EXEC
-          tar -czf ./artifacts/$NAME-$TARGET-$TAG.tar.gz $EXEC
-      - name: Archive artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: result
-          path: |
-            ./artifacts
-
-  # deploys to GitHub releases on tag
-  deploy:
-    needs: build
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v2
-        with:
-          name: result
-          path: ./artifacts
-      - name: List
-        run: find ./artifacts
-      - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: ./artifacts/*.tar.gz
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install Linux dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          g++ \
+          pkg-config \
+          libx11-dev \
+          libasound2-dev \
+          libudev-dev \
+          libxkbcommon-x11-0 \
+          libwayland-dev \
+          libxkbcommon-dev
+    
+    - name: Cache cargo registry
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/registry
+        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Cache cargo index
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo/git
+        key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Cache cargo build
+      uses: actions/cache@v4
+      with:
+        path: target
+        key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Build
+      run: cargo build --verbose --release
+    
+    - name: Run tests
+      run: cargo test --verbose
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: cookie-clicker-linux
+        path: target/release/cookie-clicker-bevy
+
+  # Optionnel: Build Windows
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Build
+      run: cargo build --verbose --release
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: cookie-clicker-windows
+        path: target/release/cookie-clicker-bevy.exe
+
+  # Optionnel: Build macOS
+  build-macos:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Cache cargo
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Build
+      run: cargo build --verbose --release
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: cookie-clicker-macos
+        path: target/release/cookie-clicker-bevy
