@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+use cosmic_text::FontSystem;
+
 mod components;
 mod resources;
 mod ui;
@@ -6,6 +8,10 @@ mod utils;
 mod system;
 mod ui_fonts;
 mod ui_icons;
+mod powerups;
+mod upgrades;
+mod achievements;
+
 use system::*;
 use crate::resources::{load_or_create_game_state, ClickPower, ComboSystem, GoldenCookieTimer, SaveTimer};
 use crate::ui::{achievement_popup_system, mouse_scroll};
@@ -14,6 +20,7 @@ const BACKGROUND_COLOR: Color = Color::srgb(0.05, 0.05, 0.08);
 
 fn main() {
     let save = load_or_create_game_state();
+    let mut font = FontSystem::new();
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {

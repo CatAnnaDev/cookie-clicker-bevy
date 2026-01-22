@@ -5,6 +5,38 @@ use bevy::asset::AssetPath;
 use bevy::input::mouse::MouseWheel;
 use bevy::prelude::*;
 use crate::resources::GameState;
+pub fn text(
+    value: &str,
+    font: Handle<Font>,
+    size: f32,
+    color: Color,
+) -> TextBundle {
+    TextBundle::from_section(
+        value,
+        TextStyle {
+            font,
+            font_size: size,
+            color,
+        },
+    )
+}
+
+pub fn emoji(
+    value: &str,
+    fonts: &UiFonts,
+    size: f32,
+    color: Color,
+) -> TextBundle {
+    TextBundle::from_section(
+        value,
+        TextStyle {
+            font: fonts.emojis.clone(),
+            font_size: size,
+            color,
+        },
+    )
+}
+
 
 pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiFonts>, game_state: Res<GameState>) {
     commands.spawn(Camera2dBundle::default());
@@ -53,6 +85,7 @@ pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiF
                             main_content.spawn(NodeBundle {
                                 style: Style {
                                     width: Val::Percent(100.0),
+                                    height: Val::Percent(90.0),
                                     flex_direction: FlexDirection::Column,
                                     justify_content: JustifyContent::Center,
                                     align_items: AlignItems::Center,
@@ -78,14 +111,8 @@ pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiF
                                         })
                                         .with_children(|row| {
                                             icon(row, &assets, AssetPath::from("ui/icons/cookie.png"), 48.0);
-                                            row.spawn(TextBundle::from_section(
-                                                "COOKIE EMPIRE",
-                                                TextStyle {
-                                                    font: fonts.bold.clone(),
-                                                    font_size: 56.0,
-                                                    color: Color::srgb(1.0, 0.85, 0.4),
-                                                },
-                                            ));
+                                            row.spawn(text("COOKIE EMPIRE", fonts.bold.clone(), 56.0, Color::srgb(1.0, 0.85, 0.4))
+                                            );
                                         });
 
                                     // Milestone
@@ -94,6 +121,7 @@ pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiF
                                             "",
                                             TextStyle {
                                                 font: fonts.semibold.clone(),
+
                                                 font_size: 24.0,
                                                 color: Color::srgb(0.7, 0.9, 1.0),
                                             },
@@ -101,7 +129,7 @@ pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiF
                                         MilestoneText,
                                     ));
 
-                                    // COUNTER PRINCIPAL - Plus gros et stylé
+                                    // COUNTER PRINCIPAL
                                     header.spawn((
                                         TextBundle::from_section(
                                             "0",
@@ -115,16 +143,16 @@ pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiF
                                     ));
 
                                     // Label "cookies"
-                                    header.spawn(TextBundle::from_section(
-                                        "cookies",
-                                        TextStyle {
-                                            font: fonts.regular.clone(),
-                                            font_size: 28.0,
-                                            color: Color::srgb(0.6, 0.6, 0.7),
-                                        },
-                                    ));
+                                    // header.spawn(TextBundle::from_section(
+                                    //     "cookies",
+                                    //     TextStyle {
+                                    //         font: fonts.regular.clone(),
+                                    //         font_size: 28.0,
+                                    //         color: Color::srgb(0.6, 0.6, 0.7),
+                                    //     },
+                                    // ));
 
-                                    // CPS avec icône
+                                    // CPS
                                     header
                                         .spawn(NodeBundle {
                                             style: Style {
@@ -140,23 +168,9 @@ pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiF
                                             ..default()
                                         })
                                         .with_children(|row| {
-                                            row.spawn(TextBundle::from_section(
-                                                "⚡",
-                                                TextStyle {
-                                                    font_size: 20.0,
-                                                    color: Color::srgb(0.3, 0.9, 0.6),
-                                                    ..default()
-                                                },
-                                            ));
+                                            //row.spawn(emoji("⚡", &fonts, 20.0, Color::srgb(0.3, 0.9, 0.6)));
                                             row.spawn((
-                                                TextBundle::from_section(
-                                                    "0 per second",
-                                                    TextStyle {
-                                                        font: fonts.semibold.clone(),
-                                                        font_size: 20.0,
-                                                        color: Color::srgb(0.3, 0.9, 0.6),
-                                                    },
-                                                ),
+                                                text("0 per second", fonts.semibold.clone(), 20.0, Color::srgb(0.3, 0.9, 0.6), ),
                                                 CpsCounter,
                                             ));
                                         });
@@ -239,8 +253,9 @@ pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiF
                                             ..default()
                                         })
                                         .with_children(|card| {
+                                            card.spawn(emoji("📊", &fonts, 18.0, Color::srgb(0.7, 0.85, 1.0)));
                                             card.spawn(TextBundle::from_section(
-                                                "📊 Stats",
+                                                "Stats",
                                                 TextStyle {
                                                     font: fonts.bold.clone(),
                                                     font_size: 18.0,
@@ -277,8 +292,9 @@ pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiF
                                             ..default()
                                         })
                                         .with_children(|card| {
+                                            card.spawn(emoji("🏆", &fonts, 18.0, Color::srgb(1.0, 0.8, 0.3)));
                                             card.spawn(TextBundle::from_section(
-                                                "🏆 Achievements",
+                                                "Achievements",
                                                 TextStyle {
                                                     font: fonts.bold.clone(),
                                                     font_size: 18.0,
@@ -376,7 +392,8 @@ pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiF
                                 right,
                                 &assets,
                                 &fonts,
-                                &format!("⚡ POWER UPS [{}]", game_state.powerups.len()),
+                                "⚡",
+                                &format!("POWER UPS [{}]", game_state.powerups.len()),
                                 AssetPath::from("ui/icons/power.png"),
                                 game_state.powerups.len(),
                                 true,
@@ -385,7 +402,8 @@ pub fn setup_ui(mut commands: Commands, assets: Res<AssetServer>, fonts: Res<UiF
                                 right,
                                 &assets,
                                 &fonts,
-                                &format!("🏭 BUILDINGS [{}]", game_state.upgrades.len()),
+                                "🏭",
+                                &format!("BUILDINGS [{}]", game_state.upgrades.len()),
                                 AssetPath::from("ui/icons/building.png"),
                                 game_state.upgrades.len(),
                                 false,
@@ -416,7 +434,7 @@ pub fn mouse_scroll(
 
                 if is_hovered {
                     scrolling_list.position += event.y * 25.0;
-                    scrolling_list.position = scrolling_list.position.clamp(-2000.0, 0.0);
+                    scrolling_list.position = scrolling_list.position.clamp(-5000.0, 0.0);
                     style.top = Val::Px(scrolling_list.position);
                 }
             }
@@ -427,6 +445,7 @@ pub fn mouse_scroll(
         parent: &mut ChildBuilder,
         _assets: &AssetServer,
         fonts: &UiFonts,
+        emoji_title: &str,
         title: &str,
         _icon_path: AssetPath,
         count: usize,
@@ -448,14 +467,25 @@ pub fn mouse_scroll(
             }, ScrollingList { position: 0.0 },))
             .with_children(|section| {
                 // HEADER
-                section.spawn(TextBundle::from_section(
-                    title,
-                    TextStyle {
-                        font: fonts.bold.clone(),
-                        font_size: 20.0,
-                        color: Color::srgb(0.95, 0.95, 1.0),
-                    },
-                ));
+                //section.spawn(emoji(emoji_title, fonts, 24.0, Color::srgb(0.9, 0.9, 1.0)));
+                section.spawn(TextBundle::from_sections([
+                    TextSection::new(
+                        emoji_title,
+                        TextStyle {
+                            font: fonts.emojis.clone(),
+                            font_size: 18.0,
+                            color: Color::srgb(0.7, 0.85, 1.0),
+                        },
+                    ),
+                    TextSection::new(
+                        title,
+                        TextStyle {
+                            font: fonts.bold.clone(),
+                            font_size: 18.0,
+                            color: Color::srgb(0.7, 0.85, 1.0),
+                        },
+                    ),
+                ]));
 
                 // LIST SCROLLABLE
                 section

@@ -1,3 +1,5 @@
+use crate::achievements::AchievementRequirement;
+use bevy::input::InputSystem;
 use bevy::prelude::*;
 use crate::components::*;
 use crate::resources::*;
@@ -6,7 +8,7 @@ use crate::utils::*;
 
 const CLICKS_PER_COMBO: u128 = 10;
 
-const PRESTIGE_BUFF: f64 = 0.01;
+pub const PRESTIGE_BUFF: f64 = 0.01;
 
 pub fn cookie_click_system(
     mut commands: Commands,
@@ -184,8 +186,7 @@ fn _spawn_particles(commands: &mut Commands, cookie_pos: Vec3, node: &Node, wind
 
 pub fn upgrade_button_system(
     mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, &mut BorderColor, &UpgradeButton),
-        Changed<Interaction>,
+    (&Interaction, &mut BackgroundColor, &mut BorderColor, &UpgradeButton),
     >,
     mut game_state: ResMut<GameState>,
 ) {
@@ -197,8 +198,6 @@ pub fn upgrade_button_system(
         let upgrade_cost = game_state.upgrades[upgrade_button.upgrade_index].cost;
         let upgrade_cps = game_state.upgrades[upgrade_button.upgrade_index].cps;
         let can_afford = game_state.cookies >= upgrade_cost;
-
-
 
         match *interaction {
             Interaction::Pressed => {
@@ -237,8 +236,7 @@ pub fn upgrade_button_system(
 
 pub fn powerup_button_system(
     mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor, &mut BorderColor, &PowerUpButton),
-        Changed<Interaction>,
+    (&Interaction, &mut BackgroundColor, &mut BorderColor, &PowerUpButton),
     >,
     mut game_state: ResMut<GameState>,
     mut click_power: ResMut<ClickPower>,
@@ -289,7 +287,7 @@ pub fn powerup_button_system(
 pub fn prestige_button_system(
     mut interaction_query: Query<
         (&Interaction, &mut BackgroundColor),
-        (Changed<Interaction>, With<PrestigeButton>),
+        With<PrestigeButton>,
     >,
     mut game_state: ResMut<GameState>,
 ) {
